@@ -33,6 +33,7 @@ extern "C" {
 
 // todo for now
 #define PICO_SD_MAX_BLOCK_COUNT 32
+#define PICO_SD_MAX_SCATTER_READ_BLOCK_COUNT 64
 // todo buffer pool
 int sd_init_4pins();
 int sd_init_1pin();

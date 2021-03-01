@@ -669,7 +669,7 @@ void sd_set_byteswap_on_read(bool swap)
 
 static uint32_t crcs[PICO_SD_MAX_BLOCK_COUNT * 2];
 static uint32_t ctrl_words[(PICO_SD_MAX_BLOCK_COUNT + 1) * 4];
-static uint32_t pio_cmd_buf[PICO_SD_MAX_BLOCK_COUNT * 3];
+static uint32_t pio_cmd_buf[PICO_SD_MAX_SCATTER_READ_BLOCK_COUNT * 3];
 
 int sd_readblocks_async(uint32_t *buf, uint32_t block, uint block_count)
 {
@@ -755,6 +755,7 @@ int sd_readblocks_scatter_async(uint32_t *control_words, uint32_t block, uint bl
     uint32_t response_buffer[5];
 
     assert(pio_sm_is_rx_fifo_empty(sd_pio, SD_DAT_SM));
+#ifndef NDEBUG
     uint32_t total = 0;
     uint32_t *p = control_words;
     while (p[0]) {
@@ -763,6 +764,7 @@ int sd_readblocks_scatter_async(uint32_t *control_words, uint32_t block, uint bl
         total += p[1];
         p += 2;
     }
+#endif
 
     // todo further state checks
     while (sd_pio->sm[SD_DAT_SM].addr != sd_cmd_or_dat_offset_no_arg_state_waiting_for_cmd) {
@@ -770,7 +772,7 @@ int sd_readblocks_scatter_async(uint32_t *control_words, uint32_t block, uint bl
     }
     assert(sd_pio->sm[SD_DAT_SM].addr == sd_cmd_or_dat_offset_no_arg_state_waiting_for_cmd);
     assert(pio_sm_is_rx_fifo_empty(sd_pio, SD_DAT_SM));
-    assert(block_count <= PICO_SD_MAX_BLOCK_COUNT);
+    assert(block_count <= PICO_SD_MAX_SCATTER_READ_BLOCK_COUNT);
 
     assert(total == block_count * (128 + (bus_width == bw_wide ? 2 : 1)));
     start_chain_dma_read_with_address_size_only(SD_DAT_SM, control_words, !bytes_swap_on_read, false);
